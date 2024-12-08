@@ -9,7 +9,7 @@ python -m venv venv
 ```
 Установите все зависимые библиотеки
 ```bash
-pip install fastapi uvicorn pydantic aiosqlite sqlalchemy
+pip install fastapi uvicorn pydantic aiosqlite sqlalchemy fastapi[all]
 ```
 Перейдите в папку server
 ```bash
