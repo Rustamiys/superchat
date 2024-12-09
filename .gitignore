@@ -81,7 +81,7 @@ site_build
 venv
 docs.zip
 archive.zip
-
+.gitignore
 # vim temporary files
 *~
 .*.sw?
