@@ -6,7 +6,7 @@
 *.log
 node_modules/
 modules/ssr-benchmarks/node_modules/
-
+.gitignore
 # Include when developing application packages.
 pubspec.lock
 .c9
