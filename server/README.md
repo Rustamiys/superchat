@@ -4,14 +4,14 @@
 python -m venv venv
 ```
 Активируйте его
-  Windows
-  ```bash
-    .\venv\Scripts\Activate
-  ```
-  Linux
-  ```bash
-    sourse .\venv\bin\activate
-  ```
+Windows
+```bash
+  .\venv\Scripts\Activate
+```
+Linux
+```bash
+  sourse .\venv\bin\activate
+```
 Установите все зависимые библиотеки
 ```bash
 pip install -r requirements.txt
