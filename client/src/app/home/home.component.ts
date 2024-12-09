@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { ReactiveFormsModule, FormControl} from '@angular/forms';
 import { MatFormFieldModule,} from '@angular/material/form-field';
 import { MatInputModule} from '@angular/material/input';
@@ -11,6 +11,9 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
+
+  @ViewChild('endOfChat') endOfChat: ElementRef;
+
   user$ = this.usersService.currentUserProfile$;
 
   searchControl = new FormControl('');
@@ -34,8 +37,11 @@ export class HomeComponent implements OnInit {
 
   messages$ = this.chatListControl.valueChanges.pipe(
     map(value => value[0]),
-    switchMap(chatId => this.chatsService.getChatMessages$(chatId))
-  )
+    switchMap(chatId => this.chatsService.getChatMessages$(chatId)),
+    tap(() => {
+      this.scrollToBottom();
+    })
+  );
 
   constructor(
     private usersService: UsersService,
@@ -53,8 +59,18 @@ export class HomeComponent implements OnInit {
     const selectedChatId = this.chatListControl.value[0];
 
     if (message && selectedChatId) {
-      this.chatsService.addChatMessage(selectedChatId, message).subscribe();
+      this.chatsService.addChatMessage(selectedChatId, message).subscribe(() => {
+        this.scrollToBottom();
+      });
       this.messageControl.setValue('');
     }
+  }
+
+  scrollToBottom() {
+    setTimeout(() => {
+      if (this.endOfChat) {
+        this.endOfChat.nativeElement.scrollIntoView({ behavior: "smooth" })
+      }
+    }, 100);
   }
 }

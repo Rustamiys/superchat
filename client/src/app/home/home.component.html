@@ -24,7 +24,7 @@
               {{chat.chatName}}
             </span>
             <span class="chat-date">
-              {{chat.lastMessageDate}}
+              {{chat.lastMessageDate | dateDisplay }}
             </span>
           </p>
           <p mat-line>
@@ -46,13 +46,32 @@
       </ng-template>
       <mat-divider></mat-divider>
       <div class="chat-area">
-        <div *ngFor="let message of messages$ | async">
-          {{ message.text }}
+        <ng-container *ngIf="user$ | async as currenttUser">
+          <div *ngFor="let message of messages$ | async"
+               class="chat-bubble-container"
+               [ngClass]="{ 'sender': message.senderId === currentUser.uid }">
+            <div class="chat-bubble">
+              {{message.text}}
+              <span class="chat-date"> {{message.sentDate | dateDisplay }}
+              </span>
+            </div>
+          </div>
+          <div #endOfChat></div>
+        </ng-container>
+        <div *ngFor="let message of messages$ | async"
+             class="chat-bubble-container">
+          <div class="chat-bubble">
+            {{message.text}}
+            <span class="chat-date">
+              14/6/2022
+            </span>
+          </div>
         </div>
       </div>
       <div class="input-area">
         <mat-form-field appearance="outline">
-          <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..." (keydown.enter)="sendMessage"/>
+          <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
+                 (keydown.enter)="sendMessage"/>
           <button mat-icon-button matSuffix (click)="sendMessage()">
             <mat-icon>send</mat-icon>
           </button>
