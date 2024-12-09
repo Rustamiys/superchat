@@ -62,6 +62,7 @@ baseline.json
 .mypy_cache
 .vscode
 .vs
+.vs/
 __pycache__
 .pytest_cache
 htmlcov
