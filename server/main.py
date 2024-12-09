@@ -4,9 +4,9 @@ from typing import List
 from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from .database import SessionLocal, engine, Base
-from .models import User as DBUser
-from .schemas import UserCreate, UserResponse, UserRegister, UserLogin
+from database import SessionLocal, engine, Base
+from models import User as DBUser
+from schemas import UserCreate, UserResponse, UserRegister, UserLogin
 
 app = FastAPI()
 
