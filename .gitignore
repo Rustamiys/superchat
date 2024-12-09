@@ -61,6 +61,7 @@ baseline.json
 .ipynb_checkpoints
 .mypy_cache
 .vscode
+.vs
 __pycache__
 .pytest_cache
 htmlcov
