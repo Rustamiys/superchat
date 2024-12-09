@@ -41,6 +41,28 @@ export class ChatsService {
     )
   }
 
+  addChatMessage(chatId: string, message: string): Observable<any> {
+    const ref = collection(this.firestore, 'chats', chatId, 'messages');
+    const chatRef = doc(this.firestore, 'chats', chatId);
+    const today = Timestamp.fromDate(new Date());
+    return this.usersService.currentUserProfile$.pipe(
+      take(1),
+      concatMap((user) => addDoc(ref, {
+        text: message,
+        senderId: user?.uid,
+        sentDate: today,
+      })
+      ),
+      concatMap(() => updateDoc(chatRef, { lastMessage: message, lastMessageDate: today }))
+    );
+  }
+
+  getChatMessages$(chatId: string): Observable<Message[]> {
+    const ref = collection(this.firestore, 'chats', chatId, 'messages');
+    const queryAll = query(ref, orderBy('sentDate', 'asc'));
+    return collectionData(queryAll) as Observable<Message[]>
+  }
+
   addChatNameAndPic(currentUserId: string, chats: Chat[]): Chat[]
   chats.forEach(chat => {
     const otherIndex = chat.userIds.indexOf(currentUserId) === 0 ? 1 : 0;

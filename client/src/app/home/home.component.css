@@ -15,6 +15,7 @@
     margin: 16px;
     background: #AFEEEE;
     border-radius: 16px;
+    padding: 24px;
 }
 
 .search-input {
@@ -42,4 +43,48 @@ input.mat-input-element {
 input.mat-input-element:focus {
     border-color: #00796b; 
     box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.2);
+}
+
+.chat-title {
+    display: flex !important;
+    justify-content: space-between;
+}
+
+.chat-name {
+    font-weight: 500;
+}
+
+.chat-date {
+    font-size: 0.7rem;
+    color: rgba(0,0,0,0.7);
+}
+
+.messages-header {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.messages-header > img {
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 16px;
+    height: 35px;
+}
+
+.messages-header > h2 {
+    margin: 0;
+}
+
+.chat-area {
+    height: calc(100vh - 270px);
+    background: white;
+}
+
+.input-area > mat-form-field {
+    width: 100%;
+}
+
+.input-area {
+    padding-top: 16px;
+    padding-bottom: 8px;
 }
