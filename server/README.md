@@ -22,5 +22,5 @@ cd server
 ```
   Запустите сервер
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --port 5000  --reload
 ```
