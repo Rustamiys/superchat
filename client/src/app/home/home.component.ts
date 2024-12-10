@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormControl} from '@angular/forms';
 import { MatFormFieldModule,} from '@angular/material/form-field';
 import { MatInputModule} from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -51,7 +52,17 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void { }
 
   createChat(otherUser: ProfileUser) {
-    this.chatsService.createChat(otherUser).subscribe();
+    this.chatsService.isExistingChat(otherUser?.uid).pipe(
+      switchMap(chatId => {
+        if (chatId) {
+          return of(chatId);
+        } else {
+          return this.chatsService.createChat(otherUser);
+        }
+      })
+    ).subscribe(chatId => {
+      this.chatListControl.setValue([chatId]);
+    })
   }
 
   sendMessage() {

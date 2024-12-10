@@ -33,10 +33,31 @@ export class ChatsService {
     const ref = collection(this.firestore, 'chats');
     return this.usersService.currentUserProfile$.pipe(
       concatMap((user) => {
-        const myQuery = query(ref, where('userIds', 'array-contains', user?.uid))
+        const myQuery = query(
+          ref,
+          where('userIds', 'array-contains', user?.uid)
+        );
         return collectionData(myQuery, { idField: 'id' }).pipe(
-          map(chats => this.addChatNameAndPic(user?.uid ?? '', chats as Chat[]))
+          map(chats =>
+            this.addChatNameAndPic(user?.uid ?? '', chats as Chat[]))
         ) as Observable<Chat[]>
+      })
+    );
+  }
+
+  isExistingChat(otherUserId: string): Observable<string | null> {
+    return this.myChats$.pipe(
+      take(1),
+      map(chats => {
+
+        for (let i = 0; i < chats.length; i++) {
+          if (chats[i].userIds.includes(otherUserId)) {
+            return chats[i].id;
+          }
+        }
+
+        return null;
+
       })
     )
   }
