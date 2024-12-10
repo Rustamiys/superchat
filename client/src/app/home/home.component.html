@@ -12,9 +12,76 @@
 
             </mat-autocomplete>
         </div>
+        <mat-selection-list [multiple]="false" [formControl]="chatListControl">
+            <mat-divider></mat-divider>
+            <!-- <mat-list-option *ngFor="let chat of myChats$ | async" [value]="chat.id"> -->
+            <mat-list-option>
+              <p mat-line class="chat-title">
+                <span class="chat-name">
+                  <!-- {{chat.chatName}} -->
+                </span>
+                <span class="chat-date">
+                  <!-- {{chat.lastMessageDate }} -->
+                </span>
+              </p>
+              <p mat-line>
+                <!-- {{chat.lastMessage}} -->
+              </p>
+              <mat-divider></mat-divider>
+            </mat-list-option>
+        </mat-selection-list>
     </div>
     <div class="messages">
-        
-    </div>
-
+        <!-- <div class="messages-header" *ngIf="selectedChat$ | async as selectedChat; else noMessages">
+          <h2>{{ selectedChat.chatName }}</h2>
+        </div> -->
+        <ng-template #noMessages>
+          <div class="messages-header">
+            <h2>Messages</h2>
+          </div>
+        </ng-template>
+        <mat-divider></mat-divider>
+        <div class="chat-area">
+          <!-- <ng-container *ngIf="user$ | async as currenttUser">
+            <div *ngFor="let message of messages$ | async"
+                 class="chat-bubble-container"
+                 [ngClass]="{ 'sender': message.senderId === currentUser.uid }">
+              <div class="chat-bubble">
+                {{message.text}}
+                <span class="chat-date"> {{message.sentDate }}
+                </span>
+              </div>
+            </div>
+            <div #endOfChat></div> 
+          </ng-container>-->
+          <!-- <div *ngFor="let message of messages$ | async"
+               class="chat-bubble-container">
+            <div class="chat-bubble">
+              {{message.text}}
+              <span class="chat-date">
+                14/6/2022
+              </span>
+            </div> -->
+          </div>
+          <div class="input-area">
+            <mat-form-field appearance="outline">
+              <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
+                     (keydown.enter)="sendMessage()"/>
+            </mat-form-field>
+            <button mat-icon-button matSuffix (click)="sendMessage()">
+                <mat-icon>send</mat-icon>
+              </button>
+          </div>
+        </div>
+    <!-- <div class="messages">
+        <div class="input-area">
+            <mat-form-field appearance="outline">
+              <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
+                     (keydown.enter)="sendMessage()"/>
+              <button mat-icon-button matSuffix (click)="sendMessage()">
+                send
+              </button>
+            </mat-form-field>
+          </div>
+    </div> -->
 </div>
