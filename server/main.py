@@ -1,12 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base
 from .models import User as DBUser
 from .schemas import UserCreate, UserResponse, UserRegister, UserLogin
+import json
 
 app = FastAPI()
 
@@ -21,6 +22,10 @@ app.add_middleware(
 
 # Инициализация базы данных
 Base.metadata.create_all(bind=engine)
+
+# # Хранилище подключенных клиентов
+connected_clients: Dict[str, WebSocket] = {}
+
 
 # Зависимость для получения сессии БД
 def get_db():
@@ -38,9 +43,19 @@ def read_root():
 def get_users(db: Session = Depends(get_db)):
     return db.query(DBUser).all()
 
+# @app.post("/api/users/register", response_model=UserResponse)
+# def register_user(user: UserRegister, db: Session = Depends(get_db)):
+#     if db.query(DBUser).filter_by(username=user.username).first():
+#         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
+#     db_user = DBUser(**user.dict())
+#     db.add(db_user)
+#     db.commit()
+#     return db.refresh(db_user) or db_user
+
+
 @app.post("/api/users/register", response_model=UserResponse)
 def register_user(user: UserRegister, db: Session = Depends(get_db)):
-    if db.query(DBUser).filter(DBUser.username == user.username).first():
+    if db.query(DBUser).filter_by(username=user.username).first():
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
     db_user = DBUser(**user.dict())
     db.add(db_user)
@@ -48,22 +63,39 @@ def register_user(user: UserRegister, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
+# @app.post("/api/users/register", response_model=UserResponse)
+# def register_user(user: UserRegister, db: Session = Depends(get_db)):
+#     if db.query(DBUser).filter(DBUser.username == user.username).first():
+#         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
+#     db_user = DBUser(**user.dict())
+#     db.add(db_user)
+#     db.commit()
+#     db.refresh(db_user)
+#     return db_user
+
+# @app.post("/api/users/login")
+# def login_user(user: UserLogin, db: Session = Depends(get_db)):
+#     db_user = db.query(DBUser).filter(DBUser.username == user.username).first()
+#     if not db_user or db_user.password != user.password:
+#         raise HTTPException(status_code=400, detail="Неверный логин или пароль")
+#     return {"message": "Успешная авторизация", "user": {"id": db_user.id, "name": db_user.name}}
+
 @app.post("/api/users/login")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(DBUser).filter(DBUser.username == user.username).first()
+    db_user = db.query(DBUser).filter_by(username=user.username).first()
     if not db_user or db_user.password != user.password:
         raise HTTPException(status_code=400, detail="Неверный логин или пароль")
     return {"message": "Успешная авторизация", "user": {"id": db_user.id, "name": db_user.name}}
 
-@app.post("/api/users", response_model=UserResponse)
-def add_user(user: UserCreate, db: Session = Depends(get_db)):
-    if db.query(DBUser).filter(DBUser.id == user.id).first():
-        raise HTTPException(status_code=400, detail="Пользователь с таким ID уже существует")
-    db_user = DBUser(**user.dict())
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+# @app.post("/api/users", response_model=UserResponse)
+# def add_user(user: UserCreate, db: Session = Depends(get_db)):
+#     if db.query(DBUser).filter(DBUser.id == user.id).first():
+#         raise HTTPException(status_code=400, detail="Пользователь с таким ID уже существует")
+#     db_user = DBUser(**user.dict())
+#     db.add(db_user)
+#     db.commit()
+#     db.refresh(db_user)
+#     return db_user
 
 @app.put("/api/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, updated_user: UserCreate, db: Session = Depends(get_db)):
@@ -84,3 +116,23 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(db_user)
     db.commit()
     return {"message": "Пользователь успешно удален"}
+
+
+@app.websocket("/ws/chat")
+async def chat(websocket: WebSocket, username: str):
+    await websocket.accept()
+    connected_clients[username] = websocket
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            broadcast_message = {"from": username, "message": message_data.get("message", "")}
+            await broadcast(json.dumps(broadcast_message))
+    except WebSocketDisconnect:
+        del connected_clients[username]
+        print(f"{username} отключился.")
+
+async def broadcast(message: str):
+    """Рассылка сообщений всем подключенным клиентам."""
+    for client in connected_clients.values():
+        await client.send_text(message)
