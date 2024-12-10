@@ -7,9 +7,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     id: int
-    birthday: date
+    birthday: str
 
 class UserRegister(UserBase):
+    id: int
+    birthday: str
     username: str
     password: str
 
@@ -19,7 +21,7 @@ class UserLogin(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    birthday: date
+    birthday: str
 
     class Config:
         orm_mode = True
