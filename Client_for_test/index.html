@@ -88,20 +88,19 @@
 
         // Авторизация
         async function login() {
-            const loginUsername = document.getElementById("login-username").value;
+            const username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
 
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: loginUsername, password })
+                body: JSON.stringify({ username, password })
             });
 
             if (response.ok) {
                 const data = await response.json();
-                username = loginUsername;
                 document.getElementById("login-status").innerText = "Авторизация успешна!";
-                startChat();
+                startChat(username);
             } else {
                 const error = await response.json();
                 document.getElementById("login-status").innerText = `Ошибка: ${error.detail}`;
@@ -109,10 +108,11 @@
         }
 
         // Начало чата
-        function startChat() {
+        function startChat(username) {
             document.getElementById("register").style.display = "none";
             document.getElementById("login").style.display = "none";
             document.getElementById("chat").style.display = "block";
+            console.log("Username", username);
 
             websocket = new WebSocket(`${WS_URL}?username=${username}`);
             websocket.onmessage = function (event) {

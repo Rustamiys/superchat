@@ -1,12 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine, Base
 from .models import User as DBUser
 from .schemas import UserCreate, UserResponse, UserRegister, UserLogin
+import json
 
 app = FastAPI()
 
@@ -30,6 +31,9 @@ app.add_middleware(
 
 # Инициализация базы данных
 Base.metadata.create_all(bind=engine)
+
+# # Хранилище подключенных клиентов
+connected_clients: Dict[str, WebSocket] = {}
 
 # Зависимость для получения сессии БД
 def get_db():
@@ -84,6 +88,25 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(db_user)
     db.commit()
     return {"message": "Пользователь успешно удален"}
+
+@app.websocket("/ws/chat")
+async def chat(websocket: WebSocket, username: str):
+    await websocket.accept()
+    connected_clients[username] = websocket
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            broadcast_message = {"from": username, "message": message_data.get("message", "")}
+            await broadcast(json.dumps(broadcast_message))
+    except WebSocketDisconnect:
+        del connected_clients[username]
+        print(f"{username} отключился.")
+
+async def broadcast(message: str):
+    """Рассылка сообщений всем подключенным клиентам."""
+    for client in connected_clients.values():
+        await client.send_text(message)
 
 # # from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 # # from pydantic import BaseModel
