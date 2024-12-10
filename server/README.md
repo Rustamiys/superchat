@@ -4,12 +4,17 @@
 python -m venv venv
 ```
 Активируйте его
+Windows
 ```bash
-.\venv\Scripts\Activate
+  .\venv\Scripts\Activate
+```
+Linux
+```bash
+  sourse .\venv\bin\activate
 ```
 Установите все зависимые библиотеки
 ```bash
-pip install fastapi uvicorn pydantic aiosqlite sqlalchemy
+pip install -r requirements.txt
 ```
 Перейдите в папку server
 ```bash
@@ -17,5 +22,5 @@ cd server
 ```
   Запустите сервер
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --port 5000  --reload
 ```
