@@ -81,33 +81,51 @@ async def broadcast(message: str):
         await client.send_text(message)
 
 @app.websocket("/ws/chat/{user1}/{user2}")
-async def chat(websocket: WebSocket, user1: str, user2: str):
-    # Определяем уникальный чат между двумя пользователями
-    room = f"{user1}-{user2}"
+async def chat(websocket: WebSocket, user1: str, user2: str, db: Session = Depends(get_db)):
+    # Генерируем уникальный идентификатор чата (или получаем существующий)
+    chat = db.query(UserChat).filter(
+        ((UserChat.user_1 == user1) & (UserChat.user_2 == user2)) |
+        ((UserChat.user_1 == user2) & (UserChat.user_2 == user1))
+    ).first()
+
+    if not chat:
+        chat = UserChat(user_1=user1, user_2=user2, chat_id=f"{user1}-{user2}")
+        db.add(chat)
+        db.commit()
+        db.refresh(chat)
+
+    chat_id = chat.chat_id
     await websocket.accept()
 
-    # Создаем запись для чата в connected_clients, если еще не существует
-    if room not in connected_clients:
-        connected_clients[room] = {}
+    # Подключаем текущего пользователя к комнате
+    if chat_id not in connected_clients:
+        connected_clients[chat_id] = {}
+    connected_clients[chat_id][user1] = websocket
 
-    # Добавляем текущее соединение в комнату
-    connected_clients[room][user1] = websocket
     try:
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)
-            message = {"from": user1, "message": message_data.get("message", "")}
 
-            # Отправляем сообщение в обе стороны чата
-            if user2 in connected_clients[room]:
-                await connected_clients[room][user2].send_text(json.dumps(message))
-            if user1 in connected_clients[room]:
-                await connected_clients[room][user1].send_text(json.dumps(message))
+            # Сохраняем сообщение в базу данных
+            message = Message(
+                chat_id=chat_id,
+                from_user=user1,
+                data=message_data.get("message", "")
+            )
+            db.add(message)
+            db.commit()
+
+            # Отправляем сообщение обоим участникам чата
+            broadcast_message = {"from": user1, "message": message.data}
+            for user, conn in connected_clients[chat_id].items():
+                await conn.send_text(json.dumps(broadcast_message))
     except WebSocketDisconnect:
-        del connected_clients[room][user1]  # Удаляем пользователя из комнаты
-        if len(connected_clients[room]) == 0:
-            del connected_clients[room]  # Удаляем комнату, если нет пользователей
-        print(f"{user1} отключился от чата {room}.")
+        # Удаляем пользователя из комнаты
+        del connected_clients[chat_id][user1]
+        if not connected_clients[chat_id]:  # Если комната пуста, удалить комнату
+            del connected_clients[chat_id]
+        print(f"{user1} отключился от чата {chat_id}.")
 
 @app.get("/api/messages/{user1}/{user2}")
 def get_messages(user1: str, user2: str, db: Session = Depends(get_db)):
@@ -123,4 +141,3 @@ def get_messages(user1: str, user2: str, db: Session = Depends(get_db)):
     # Получаем историю сообщений
     messages = db.query(Message).filter(Message.chat_id == chat.chat_id).order_by(Message.timestamp).all()
     return [{"from_user": msg.from_user, "message": msg.data, "timestamp": msg.timestamp} for msg in messages]
-
