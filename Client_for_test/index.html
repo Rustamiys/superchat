@@ -1,3 +1,155 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>SuperChat Client</title>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: Arial, sans-serif;-->
+<!--            margin: 20px;-->
+<!--        }-->
+<!--        #chat {-->
+<!--            display: none;-->
+<!--            border: 1px solid #ccc;-->
+<!--            padding: 10px;-->
+<!--            max-width: 400px;-->
+<!--        }-->
+<!--        .message {-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>SuperChat Client</h1>-->
+
+<!--    &lt;!&ndash; Регистрация &ndash;&gt;-->
+<!--    <div id="register">-->
+<!--        <h2>Регистрация</h2>-->
+<!--        <input type="text" id="reg-id" placeholder="ID" required><br>-->
+<!--        <input type="text" id="reg-name" placeholder="Имя" required><br>-->
+<!--        <input type="text" id="reg-surname" placeholder="Фамилия" required><br>-->
+<!--        <input type="text" id="reg-birthday" placeholder="Дата рождения" required><br>-->
+<!--        <input type="text" id="reg-username" placeholder="Логин" required><br>-->
+<!--        <input type="password" id="reg-password" placeholder="Пароль" required><br>-->
+<!--        <button onclick="register()">Зарегистрироваться</button>-->
+<!--        <p id="reg-status"></p>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Авторизация &ndash;&gt;-->
+<!--    <div id="login">-->
+<!--        <h2>Авторизация</h2>-->
+<!--        <input type="text" id="login-username" placeholder="Логин" required><br>-->
+<!--        <input type="password" id="login-password" placeholder="Пароль" required><br>-->
+<!--        <button onclick="login()">Войти</button>-->
+<!--        <p id="login-status"></p>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Чат &ndash;&gt;-->
+<!--    <div id="chat">-->
+<!--        <h2>Чат</h2>-->
+<!--        <div id="messages" style="height: 200px; overflow-y: scroll; border: 1px solid #000; margin-bottom: 10px;">-->
+<!--        </div>-->
+<!--        <input type="text" id="message-input" placeholder="Введите сообщение"><br>-->
+<!--        <button onclick="sendMessage()">Отправить</button>-->
+<!--        <button onclick="logout()">Выйти</button>-->
+<!--    </div>-->
+
+<!--    <script>-->
+<!--        const API_BASE_URL = "http://127.0.0.1:8000/api/users";-->
+<!--        const WS_URL = "ws://127.0.0.1:8000/ws/chat";-->
+
+<!--        let username = null;-->
+<!--        let websocket = null;-->
+
+<!--        // Регистрация-->
+<!--        async function register() {-->
+<!--            console.log("Func Register start");-->
+<!--            const id = document.getElementById("reg-id").value;-->
+<!--            const name = document.getElementById("reg-name").value;-->
+<!--            const surname = document.getElementById("reg-surname").value;-->
+<!--            const birthday = document.getElementById("reg-birthday").value;-->
+<!--            const username = document.getElementById("reg-username").value;-->
+<!--            const password = document.getElementById("reg-password").value;-->
+
+<!--            const response = await fetch(`${API_BASE_URL}/register`, {-->
+<!--                method: "POST",-->
+<!--                headers: { "Content-Type": "application/json" },-->
+<!--                body: JSON.stringify({ id, name, surname, birthday, username, password })-->
+<!--            });-->
+
+<!--            if (response.ok) {-->
+<!--                document.getElementById("reg-status").innerText = "Регистрация успешна!";-->
+<!--            } else {-->
+<!--                const error = await response.json();-->
+<!--                document.getElementById("reg-status").innerText = `Ошибка: ${error.detail}`;-->
+<!--            }-->
+<!--        }-->
+
+<!--        // Авторизация-->
+<!--        async function login() {-->
+<!--            const username = document.getElementById("login-username").value;-->
+<!--            const password = document.getElementById("login-password").value;-->
+
+<!--            const response = await fetch(`${API_BASE_URL}/login`, {-->
+<!--                method: "POST",-->
+<!--                headers: { "Content-Type": "application/json" },-->
+<!--                body: JSON.stringify({ username, password })-->
+<!--            });-->
+
+<!--            if (response.ok) {-->
+<!--                const data = await response.json();-->
+<!--                document.getElementById("login-status").innerText = "Авторизация успешна!";-->
+<!--                startChat(username);-->
+<!--            } else {-->
+<!--                const error = await response.json();-->
+<!--                document.getElementById("login-status").innerText = `Ошибка: ${error.detail}`;-->
+<!--            }-->
+<!--        }-->
+
+<!--        // Начало чата-->
+<!--        function startChat(username) {-->
+<!--            document.getElementById("register").style.display = "none";-->
+<!--            document.getElementById("login").style.display = "none";-->
+<!--            document.getElementById("chat").style.display = "block";-->
+<!--            console.log("Username", username);-->
+
+<!--            websocket = new WebSocket(`${WS_URL}?username=${username}`);-->
+<!--            websocket.onmessage = function (event) {-->
+<!--                const data = JSON.parse(event.data);-->
+<!--                const messageDiv = document.createElement("div");-->
+<!--                messageDiv.className = "message";-->
+<!--                messageDiv.innerText = `${data.from}: ${data.message}`;-->
+<!--                document.getElementById("messages").appendChild(messageDiv);-->
+<!--            };-->
+<!--        }-->
+
+<!--        // Отправка сообщения-->
+<!--        function sendMessage() {-->
+<!--            const messageInput = document.getElementById("message-input");-->
+<!--            const message = messageInput.value;-->
+<!--            messageInput.value = "";-->
+
+<!--            if (websocket) {-->
+<!--                websocket.send(JSON.stringify({ message }));-->
+<!--            }-->
+<!--        }-->
+
+<!--        // Выход из чата-->
+<!--        function logout() {-->
+<!--            if (websocket) {-->
+<!--                websocket.close();-->
+<!--                websocket = null;-->
+<!--            }-->
+<!--            username = null;-->
+<!--            document.getElementById("chat").style.display = "none";-->
+<!--            document.getElementById("login").style.display = "block";-->
+<!--        }-->
+<!--    </script>-->
+<!--</body>-->
+<!--</html>-->
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,6 +166,10 @@
             border: 1px solid #ccc;
             padding: 10px;
             max-width: 400px;
+        }
+        #contacts {
+            display: none;
+            margin-bottom: 20px;
         }
         .message {
             margin-bottom: 10px;
@@ -45,6 +201,14 @@
         <p id="login-status"></p>
     </div>
 
+    <!-- Выбор контактов -->
+    <div id="contacts">
+        <h2>Контакты</h2>
+        <input type="text" id="contact-username" placeholder="Логин собеседника"><br>
+        <button onclick="startChat()">Начать чат</button>
+        <p id="contact-status"></p>
+    </div>
+
     <!-- Чат -->
     <div id="chat">
         <h2>Чат</h2>
@@ -57,14 +221,15 @@
 
     <script>
         const API_BASE_URL = "http://127.0.0.1:8000/api/users";
+        const MESSAGES_URL = "http://127.0.0.1:8000/api/messages";
         const WS_URL = "ws://127.0.0.1:8000/ws/chat";
 
         let username = null;
         let websocket = null;
+        let currentChat = null;
 
         // Регистрация
         async function register() {
-            console.log("Func Register start");
             const id = document.getElementById("reg-id").value;
             const name = document.getElementById("reg-name").value;
             const surname = document.getElementById("reg-surname").value;
@@ -88,7 +253,7 @@
 
         // Авторизация
         async function login() {
-            const username = document.getElementById("login-username").value;
+            username = document.getElementById("login-username").value;
             const password = document.getElementById("login-password").value;
 
             const response = await fetch(`${API_BASE_URL}/login`, {
@@ -98,9 +263,10 @@
             });
 
             if (response.ok) {
-                const data = await response.json();
                 document.getElementById("login-status").innerText = "Авторизация успешна!";
-                startChat(username);
+                document.getElementById("register").style.display = "none";
+                document.getElementById("login").style.display = "none";
+                document.getElementById("contacts").style.display = "block";
             } else {
                 const error = await response.json();
                 document.getElementById("login-status").innerText = `Ошибка: ${error.detail}`;
@@ -108,13 +274,34 @@
         }
 
         // Начало чата
-        function startChat(username) {
-            document.getElementById("register").style.display = "none";
-            document.getElementById("login").style.display = "none";
-            document.getElementById("chat").style.display = "block";
-            console.log("Username", username);
+        async function startChat() {
+            const contactUsername = document.getElementById("contact-username").value;
 
-            websocket = new WebSocket(`${WS_URL}?username=${username}`);
+            if (!contactUsername) {
+                document.getElementById("contact-status").innerText = "Введите логин собеседника!";
+                return;
+            }
+
+            currentChat = contactUsername;
+            document.getElementById("contacts").style.display = "none";
+            document.getElementById("chat").style.display = "block";
+
+            // Загрузка истории
+            const response = await fetch(`${MESSAGES_URL}/${username}/${contactUsername}`);
+            if (response.ok) {
+                const messages = await response.json();
+                const messagesDiv = document.getElementById("messages");
+                messagesDiv.innerHTML = "";
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement("div");
+                    messageDiv.className = "message";
+                    messageDiv.innerText = `${msg.from_user}: ${msg.message}`;
+                    messagesDiv.appendChild(messageDiv);
+                });
+            }
+
+            // Установка WebSocket
+            websocket = new WebSocket(`${WS_URL}/${username}/${contactUsername}`);
             websocket.onmessage = function (event) {
                 const data = JSON.parse(event.data);
                 const messageDiv = document.createElement("div");
@@ -135,14 +322,16 @@
             }
         }
 
-        // Выход из чата
+        // Выход
         function logout() {
             if (websocket) {
                 websocket.close();
                 websocket = null;
             }
             username = null;
+            currentChat = null;
             document.getElementById("chat").style.display = "none";
+            document.getElementById("contacts").style.display = "none";
             document.getElementById("login").style.display = "block";
         }
     </script>
