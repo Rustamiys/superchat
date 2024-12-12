@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { webSocket } from 'rxjs/webSocket';
 import { Observable, Subject } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { takeLast } from 'rxjs';
 
 export interface Chat {
   id: string;
@@ -13,8 +15,8 @@ export interface Chat {
 
 export interface Message {
   text: string;
-  senderId: number;
-  recipientId: number;
+  senderId: string;
+  chat_id: string;
   sentDate: Date;
 }
 
@@ -25,18 +27,20 @@ export class ChatService {
   private ws: WebSocket | null = null;
   private messagesSubject: Subject<Message> = new Subject();
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  connect(chat_id: string): void {
+  connect(user1: string, user2: string): void {
     if (this.ws) {
       this.ws.close();
     }
 
-    this.ws = new WebSocket(`ws://localhost:5000/ws/${chat_id}`);
+    // Подключение по WebSocket для конкретных пользователей
+    this.ws = new WebSocket(`ws://localhost:5000/ws/chat/${user1}/${user2}`);
     this.ws.onmessage = (event) => {
       const message: Message = JSON.parse(event.data);
       this.messagesSubject.next(message);
     };
+    console.log(this.messagesSubject);
 
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error);
@@ -47,19 +51,19 @@ export class ChatService {
     };
   }
 
-  sendMessage(message: Message): void {
+  sendMessage(user1: string, user2: string, message: string): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        text: message.text,
-        sender_id: message.senderId,
-        recipient_id: message.recipientId,
-        sent_date: message.sentDate.toISOString(),
-      }));
+      this.ws.send(
+        JSON.stringify({
+          message: message, // Сообщение от текущего пользователя
+          sender_id: user1, // ID отправителя
+        })
+      );
     } else {
       console.error('WebSocket is not connected.');
     }
-  }
-  
+  }  
+
   closeConnection(): void {
     if (this.ws) {
       this.ws.close();
@@ -67,7 +71,11 @@ export class ChatService {
     }
   }
 
-  getMessages(): Observable<Message> {
+  getMessage(): Observable<Message> {
     return this.messagesSubject.asObservable();
+  }
+
+  getMessagesAll(user1: string, user2: string): Observable<Message[]> {
+    return this.http.get<Message[]>(`http://localhost:5000/api/messages/${user1}/${user2}`);
   }
 }
