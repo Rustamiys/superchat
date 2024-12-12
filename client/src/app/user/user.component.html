@@ -1,41 +1,10 @@
-  <!-- <div class="container">
-      <h1>Добавить пользователя</h1>
-    
-      <div class="form-container">
-        <h2>Регистрация</h2>
-        <form [formGroup]="registerForm" (ngSubmit)="registerUser()">
-
-
-          <label for="name">Имя:</label>
-          <input id="name" formControlName="name" type="name" />
-
-          <label for="surename">Фамилия:</label>
-          <input id="surename" formControlSureName="surename" type="surename" />      
-          
-          <label for="login">Логин:</label>
-          <input id="login" formControlLogin="login" type="text" />
-          
-          <label for="password">Пароль:</label>
-          <input id="password" formControlPassword="password" type="password" />
-          
-          <button type="submit" [disabled]="!registerForm.valid">Зарегистрироваться</button>
-        </form>
-      </div>
-    
-      <p>{{ message }}</p>
-    
-
-    </div>
-    
-     -->
-
-
 <body>
   <div class="wrapper">
     <div class="auth-wrapper">
       <div class="block">
-        <h2 class="mt-1" style="text-align: center;">Регистрация</h2>
-        <form [formGroup]="registerForm" (ngSubmit)="registerUser()" class="flex flex-col mt-1">
+        <h2 class="mt-1" *ngIf="registerDisplay" style="text-align: center;">Регистрация</h2>
+        <h2 class="mt-1" *ngIf="loginDisplay" style="text-align: center;">Авторизация</h2>
+        <form [formGroup]="registerForm" *ngIf="registerDisplay" (ngSubmit)="registerUser()" class="flex flex-col mt-1">
         
           <label for="name">Имя</label>
           <div class="input">
@@ -62,18 +31,30 @@
             <input id="birthday" formControlName="birthday" type="birthday" placeholder="Дата рождения"/>
           </div>
 
-        <button type="submit" [disabled]="!registerForm.valid" class="mt-1">Зарегистрироваться</button>
-        <div class="line"></div>
-        <a href="/login" class="btn">Авторизация</a>
+          <button type="submit" [disabled]="!registerForm.valid" class="mt-1">Зарегистрироваться</button>
+          <div class="line"></div>
         </form>
 
-        <h2>Список пользователей</h2>
-        <ul>
-          <li *ngFor="let user of users">
-          {{ user.id }}: {{ user.name }} ({{ user.username }})
-          </li>
-        </ul>
+        <form [formGroup]="loginForm" *ngIf="loginDisplay" (ngSubmit)="loginUser()" class="flex flex-col mt-1">
+          <label for="login">Логин</label>
+          <div class="input">
+              <input id="login" formControlName="login" type="text" placeholder="Логин"/>
+          </div>
+          
+          <label for="password">Пароль</label>
+          <div class="input">
+            <input id="password" formControlName="password" type="password" placeholder="Пароль"/>
+          </div>          
+
+          <button type="submit" [disabled]="!loginForm.valid" class="mt-1">Войти</button>
+          <div class="line"></div>
+        </form>
+        <div class="flex flex-col mt-1">
+          <button (click)="showLogin()">Авторизация</button>
+          <button (click)="showRegistr()">Регистрация</button>
+        </div>
       </div>
     </div>
   </div>
 </body>
+
