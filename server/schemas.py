@@ -3,25 +3,21 @@ from datetime import date
 
 class UserBase(BaseModel):
     name: str
-    surname: str
-
-class UserCreate(UserBase):
-    id: int
+    surename: str
     birthday: str
+    login: str
 
 class UserRegister(UserBase):
-    id: int
+    name: str
+    surename: str
     birthday: str
-    username: str
+    login: str
     password: str
 
 class UserLogin(BaseModel):
-    username: str
+    login: str
     password: str
 
 class UserResponse(UserBase):
-    id: int
-    birthday: str
-
     class Config:
         orm_mode = True

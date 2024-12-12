@@ -5,20 +5,19 @@ from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from . import schemas, models
-from .database import SessionLocal, engine, Base
-from .models import User as DBUser, UserChat, Message
-from .schemas import UserCreate, UserResponse, UserRegister, UserLogin
+from database import SessionLocal, engine, Base
+from models import User as DBUser, Message, UserChat
+from schemas import UserResponse, UserLogin, UserRegister
 import json
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешить запросы с любого источника
-    allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы (GET, POST и т.д.)
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_origins=["*"],  # Replace "*" with your frontend's origin(s) for production
+    allow_credentials=False,
+    allow_methods=["*"],  # Adjust to your needs
+    allow_headers=["*"],  # Adjust to your needs
 )
 
 # Инициализация базы данных
@@ -39,14 +38,25 @@ def get_db():
 def read_root():
     return {"message": "Welcome to the SuperChat API"}
 
+@app.get("/api/users/{login}", response_model=List[UserResponse])
+def get_users(login: str, db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.login==login).first()    
+    if user:
+        return [user]
+    else:
+        return {"status_code":404}
+
 @app.get("/api/users", response_model=List[UserResponse])
 def get_users(db: Session = Depends(get_db)):
-    return db.query(DBUser).all()
+    users = db.query(DBUser).all()
+    return users
+    # print([UserResponse.from_orm(user) for user in users])
+    # return [UserResponse.from_orm(user) for user in users]
 
 @app.post("/api/users/register", response_model=UserResponse)
 def register_user(user: UserRegister, db: Session = Depends(get_db)):
     print(f"Received user data: {user}")
-    if db.query(DBUser).filter(DBUser.username == user.username).first():
+    if db.query(DBUser).filter(DBUser.login==user.login).first():
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
     db_user = DBUser(**user.dict())
     db.add(db_user)
@@ -56,24 +66,10 @@ def register_user(user: UserRegister, db: Session = Depends(get_db)):
 
 @app.post("/api/users/login")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(DBUser).filter(DBUser.username == user.username).first()
+    db_user = db.query(DBUser).filter(DBUser.login == user.login).first()
     if not db_user or db_user.password != user.password:
         raise HTTPException(status_code=400, detail="Неверный логин или пароль")
-    return {"message": "Успешная авторизация", "user": {"id": db_user.id, "name": db_user.name}}
-
-@app.websocket("/ws/chat")
-async def chat(websocket: WebSocket, username: str):
-    await websocket.accept()
-    connected_clients[username] = websocket
-    try:
-        while True:
-            data = await websocket.receive_text()
-            message_data = json.loads(data)
-            broadcast_message = {"from": username, "message": message_data.get("message", "")}
-            await broadcast(json.dumps(broadcast_message))
-    except WebSocketDisconnect:
-        del connected_clients[username]
-        print(f"{username} отключился.")
+    return {"status_code": 200, "user": {"id": db_user.id, "name": db_user.name}}
 
 async def broadcast(message: str):
     """Рассылка сообщений всем подключенным клиентам."""
@@ -95,6 +91,7 @@ async def chat(websocket: WebSocket, user1: str, user2: str, db: Session = Depen
         db.refresh(chat)
 
     chat_id = chat.chat_id
+    print(chat_id)
     await websocket.accept()
 
     # Подключаем текущего пользователя к комнате
@@ -117,8 +114,9 @@ async def chat(websocket: WebSocket, user1: str, user2: str, db: Session = Depen
             db.commit()
 
             # Отправляем сообщение обоим участникам чата
-            broadcast_message = {"from": user1, "message": message.data}
+            broadcast_message = {"senderId": user1, "text": message.data, "chat_id": message.chat_id, "sentDate": str(message.timestamp)}
             for user, conn in connected_clients[chat_id].items():
+                print(user, conn)
                 await conn.send_text(json.dumps(broadcast_message))
     except WebSocketDisconnect:
         # Удаляем пользователя из комнаты
@@ -140,4 +138,4 @@ def get_messages(user1: str, user2: str, db: Session = Depends(get_db)):
 
     # Получаем историю сообщений
     messages = db.query(Message).filter(Message.chat_id == chat.chat_id).order_by(Message.timestamp).all()
-    return [{"from_user": msg.from_user, "message": msg.data, "timestamp": msg.timestamp} for msg in messages]
+    return [{"senderId": msg.from_user, "text": msg.data, "sentDate": msg.timestamp} for msg in messages]
