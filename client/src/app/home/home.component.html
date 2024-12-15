@@ -1,33 +1,21 @@
 <div class="container">
   <div class="chat-list">
-      <!-- <div class="search-input">
-          <mat-form-field>
-              <input 
-              matInput 
-              placeholder="Поиск..." 
-              [formControl]="searchControl"
-              [matAutocomplete]="users">
-          </mat-form-field>
-          <mat-autocomplete #users="matAutocomplete">
-
-          </mat-autocomplete>
-      </div> -->
-      <mat-selection-list [multiple]="false" [formControl]="chatListControl" > 
-        <mat-list-option *ngFor="let chat of myChats$" [value]="chat.login" (click)="$event.stopPropagation(); select(chat.login)">
-            <p mat-line class="chat-title">
-              <span class="chat-name">
-                {{ chat.surename }}
-              </span>
-              <span class="chat-name">
-                {{ chat.login }}
-              </span>
-              <span class="chat-date">
-                {{ chat.name }}
-              </span>
-            </p>
+    <div class="messages-header" *ngIf="user$ | async as user; else noMessages">
+      <h2>{{ user.name }} {{ user.surename }}</h2>
+    </div>
+      <mat-selection-list *ngIf="myChats$ | async as myChats; else loading" [multiple]="false" [formControl]="chatListControl">
+        <mat-list-option *ngFor="let chat of myChats" [value]="chat.login" (click)="$event.stopPropagation(); select(chat.login)">
+          <p mat-line class="chat-title">
+            <span class="chat-name">{{ chat.surename }}</span>
+            <span class="chat-login">{{ chat.login }}</span>
+            <span class="chat-name">{{ chat.name }}</span>
+          </p>
           <mat-divider></mat-divider>
         </mat-list-option>
       </mat-selection-list>
+      <ng-template #loading>
+        <p>Загрузка данных...</p>
+      </ng-template>
   </div>
   <div class="messages">
       <div class="messages-header" *ngIf="selectedChat$ else noMessages">
@@ -42,47 +30,37 @@
       <div class="chat-area">
         <ng-container>
           <div *ngFor="let message of chat"
-               class="chat-bubble-container"
-               [ngClass]="{ 'sender': message.senderId }">
-            <div class="chat-bubble">
-              {{message.text}}
+              class="chat-bubble-container"
+              [ngClass]="{ 'sender': message.senderId === user_id }">
+            <div *ngIf="message.senderId === user_id" class="chat-bubble-self">
+              {{ message.text }}
+              <br>
               <span class="chat-date">
-                {{message.senderId}} 
-                {{message.sentDate }}
+                {{ message.senderId }} 
+                {{ message.sentDate | date: 'dd.MM.yyyy, HH:mm:ss' }}
+            </span>
+            </div>
+            <div *ngIf="message.senderId !== user_id" class="chat-bubble-sender">
+              {{ message.text }}
+              <br>
+              <span class="chat-date">
+                {{ message.senderId }} 
+                {{ message.sentDate | date: 'dd.MM.yyyy, HH:mm:ss' }}
               </span>
             </div>
-          </div>
-          <div #endOfChat></div> 
+        </div>     
         </ng-container>
-        <div class="input-area">
-          <mat-form-field appearance="outline">
-            <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
-                   (keydown.enter)="sendMessage()"/>
-          </mat-form-field>
-          <button mat-icon-button matSuffix (click)="sendMessage()">
-              <mat-icon>send</mat-icon>
-            </button>
-        </div>
-        <!-- <div *ngFor="let message of messages$ | async"
-             class="chat-bubble-container">
-          <div class="chat-bubble">
-            {{message.text}}
-            <span class="chat-date">
-              14/6/2022
-            </span>
-          </div>
-        </div>
-        
+        <div #endOfChat></div>
+
       </div>
-  <!-- <div class="messages">
       <div class="input-area">
-          <mat-form-field appearance="outline">
-            <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
-                   (keydown.enter)="sendMessage()"/>
-            <button mat-icon-button matSuffix (click)="sendMessage()">
-              send
-            </button>
-          </mat-form-field>
-        </div>
-  </div> -->
+        <mat-form-field appearance="outline">
+          <input [formControl]= "messageControl" matInput placeholder="Введите ваше сообщение..."
+                 (keydown.enter)="sendMessage()"/>
+        </mat-form-field>
+        <button mat-icon-button matSuffix (click)="sendMessage()">
+            <mat-icon>send</mat-icon>
+          </button>
+      </div>
+  </div>
 </div>

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { webSocket } from 'rxjs/webSocket';
 import { Observable, Subject } from 'rxjs';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { takeLast } from 'rxjs';
+import { takeLast, BehaviorSubject } from 'rxjs';
 
 export interface Chat {
   id: string;
@@ -26,7 +26,8 @@ export interface Message {
 export class ChatService {
   private ws: WebSocket | null = null;
   private messagesSubject: Subject<Message> = new Subject();
-
+  // private messagesSubject = new BehaviorSubject<Message | null>(null);
+  // private messagesSubject = new BehaviorSubject<Message>(null);
   constructor(private http: HttpClient) {}
 
   connect(user1: string, user2: string): void {
@@ -38,8 +39,10 @@ export class ChatService {
     this.ws = new WebSocket(`ws://localhost:5000/ws/chat/${user1}/${user2}`);
     this.ws.onmessage = (event) => {
       const message: Message = JSON.parse(event.data);
-      this.messagesSubject.next(message);
+      this.messagesSubject.next(message); // Передаём сообщение в поток
+      console.log(this.messagesSubject);
     };
+
     console.log(this.messagesSubject);
 
     this.ws.onerror = (error) => {
@@ -74,6 +77,12 @@ export class ChatService {
   getMessage(): Observable<Message> {
     return this.messagesSubject.asObservable();
   }
+  // getMessage(){
+  //   if (this.ws){
+  //     this.ws.subscribe(
+  //       (message) => this.messagesSubject.next(message));
+  //   }
+  // }
 
   getMessagesAll(user1: string, user2: string): Observable<Message[]> {
     return this.http.get<Message[]>(`http://localhost:5000/api/messages/${user1}/${user2}`);

@@ -35,20 +35,6 @@ export class UserComponent {
     });
   }
 
-    // this.getUsers();
-
-  // getUsers(): void {
-  //   this.userService.getAllUsers().subscribe({
-  //     next: (data) => {
-  //       this.users = data;
-  //     },
-  //     error: (error) => {
-  //       console.error('Ошибка при загрузке пользователей:', error);
-  //     },
-  //   });
-  //   console.log(this.userService.getAllUsers())
-  // }
-
   registerUser(): void {
     if (this.registerForm.valid) {
       this.userService.register(this.registerForm.value).subscribe({
