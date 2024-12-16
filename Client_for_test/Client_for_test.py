@@ -1,122 +1,74 @@
+import asyncio
+import websockets
 import requests
+import json
+from datetime import datetime
 
-BASE_URL = "http://127.0.0.1:8000/api/users"
+# URL-ы для API и WebSocket
+API_BASE_URL = "http://127.0.0.1:8000/api"
+WS_BASE_URL = "ws://127.0.0.1:8000/ws/chat"
 
-def print_menu():
-    print("\nМеню:")
-    print("1. Просмотреть всех пользователей")
-    print("2. Зарегистрировать нового пользователя")
-    print("3. Обновить данные пользователя")
-    print("4. Удалить пользователя")
-    print("5. Выйти")
+# Регистрация пользователя
+def register_user():
+    user = {
+        "name": "John",
+        "surename": "Doe",
+        "birthday": "1990-01-01",
+        "login": "john_doe",
+        "password": "password123",
+    }
+    response = requests.post(f"{API_BASE_URL}/users/register", json=user)
+    print(response.json())
 
+# Авторизация пользователя
+def login_user():
+    credentials = {
+        "login": "john_doe",
+        "password": "password123"
+    }
+    response = requests.post(f"{API_BASE_URL}/users/login", json=credentials)
+    print(response.json())
+
+# Получение списка пользователей
 def get_users():
-    response = requests.get(BASE_URL)
-    if response.status_code == 200:
-        users = response.json()
-        if users:
-            print("\nСписок пользователей:")
-            for user in users:
-                print(f"ID: {user['id']}, Имя: {user['name']}, Фамилия: {user['surname']}")
+    response = requests.get(f"{API_BASE_URL}/users")
+    print(response.json())
 
-        else:
-            print("\nПользователей нет.")
-    else:
-        print(f"Ошибка: {response.status_code}, {response.text}")
+# Получение истории сообщений между двумя пользователями
+def get_chat_history(user1, user2):
+    response = requests.get(f"{API_BASE_URL}/messages/{user1}/{user2}")
+    print(response.json())
 
-def add_user():
-    print("\nДобавление нового пользователя:")
-    user_data = {
-        "id": int(input("Введите ID: ")),
-        "name": input("Введите имя: "),
-        "surname": input("Введите фамилию: "),
-        "birthday": input("Введите дату рождения (YYYY-MM-DD): "),
-        "username": input("Введите логин: "),
-        "password": input("Введите пароль: ")
-    }
-    response = requests.post(BASE_URL+"/register", json=user_data)
-    if response.status_code == 200:
-        print("Пользователь успешно добавлен:", response.json())
-    else:
-        print(f"Ошибка: {response.status_code}, {response.text}")
+# Подключение к WebSocket и отправка/прием сообщений
+async def chat_client(user1, user2):
+    uri = f"{WS_BASE_URL}/{user1}/{user2}"
 
-def update_user():
-    print("\nОбновление данных пользователя:")
-    user_id = int(input("Введите ID пользователя, которого хотите обновить: "))
-    updated_data = {
-        "id": user_id,
-        "name": input("Введите новое имя: "),
-        "surname": input("Введите новую фамилию: "),
-        "birthday": input("Введите новую дату рождения (YYYY-MM-DD): "),
-        "username": input("Введите новый логин: "),
-        "password": input("Введите новый пароль: ")
-    }
-    response = requests.put(f"{BASE_URL}/{user_id}", json=updated_data)
-    if response.status_code == 200:
-        print("Пользователь успешно обновлен:", response.json())
-    else:
-        print(f"Ошибка: {response.status_code}, {response.text}")
+    async with websockets.connect(uri) as websocket:
+        print(f"Подключено к чату {user1} - {user2}")
 
-def delete_user():
-    print("\nУдаление пользователя:")
-    user_id = int(input("Введите ID пользователя для удаления: "))
-    response = requests.delete(f"{BASE_URL}/{user_id}")
-    if response.status_code == 200:
-        print(response.json()["message"])
-    else:
-        print(f"Ошибка: {response.status_code}, {response.text}")
+        # Отправка сообщения
+        message = {
+            "senderId": user1,
+            "chatId": f"{user1}-{user2}",
+            "message": "Привет, как дела?",
+            "sentDate": datetime.now().isoformat()
+        }
+        await websocket.send(json.dumps(message))
+        print(f"Отправлено сообщение: {message}")
 
-def main():
-    while True:
-        print_menu()
-        choice = input("\nВыберите опцию: ")
-        if choice == "1":
-            get_users()
-        elif choice == "2":
-            add_user()
-        elif choice == "3":
-            update_user()
-        elif choice == "4":
-            delete_user()
-        elif choice == "5":
-            print("Выход из клиента.")
-            break
-        else:
-            print("Неверный выбор. Попробуйте снова.")
+        # Прослушивание ответов
+        try:
+            async for response in websocket:
+                print(f"Получено сообщение: {response}")
+        except websockets.ConnectionClosed as e:
+            print(f"Соединение закрыто: {e}")
 
 if __name__ == "__main__":
-    main()
+    # Пример использования REST API
+    register_user()
+    login_user()
+    get_users()
+    get_chat_history("john_doe", "jane_doe")
 
-
-# import asyncio
-# import websockets
-# import json
-#
-# async def websocket_client():
-#     uri = "ws://127.0.0.1:8000/ws/chat"
-#     username = input("Введите ваш логин для чата: ")
-#
-#     async with websockets.connect(f"{uri}?username={username}") as websocket:
-#         print("Вы подключились к чату. Пишите сообщения!")
-#         # Задаем асинхронную задачу для получения сообщений
-#         asyncio.create_task(receive_messages(websocket))
-#
-#         while True:
-#             message = input("Вы: ")
-#             if message.lower() == "/exit":
-#                 print("Выход из чата...")
-#                 break
-#             await websocket.send(json.dumps({"message": message}))
-#
-# async def receive_messages(websocket):
-#     """Получение сообщений от сервера."""
-#     try:
-#         while True:
-#             response = await websocket.recv()
-#             data = json.loads(response)
-#             print(f"{data['from']}: {data['message']}")
-#     except websockets.exceptions.ConnectionClosed:
-#         print("Соединение закрыто.")
-#
-# if __name__ == "__main__":
-#     asyncio.run(websocket_client())
+    # Пример использования WebSocket
+    asyncio.run(chat_client("john_doe", "jane_doe"))
